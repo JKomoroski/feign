@@ -19,6 +19,8 @@ import static org.assertj.core.data.MapEntry.entry;
 import static org.junit.Assert.assertEquals;
 import static org.junit.Assert.assertNotNull;
 import static org.junit.Assert.assertTrue;
+
+import feign.template.QueryTemplate;
 import java.util.Arrays;
 import java.util.Collection;
 import java.util.Collections;
@@ -171,6 +173,55 @@ public class RequestTemplateTest {
 
     assertThat(template.url())
         .isEqualToIgnoringCase("/api/collections?keys=one&keys=two&values%5B%5D=1%2C2");
+  }
+
+  @Test
+  public void resolveTemplateWitheEmptyQueryParam() {
+    RequestTemplate template = new RequestTemplate().method(HttpMethod.GET)
+            .uri("/")
+            .query("key", "{key}");
+
+    final LinkedHashMap<String, String> variables = new LinkedHashMap<>();
+
+    variables.put("key", "");
+
+    template = template.resolve(variables);
+
+
+    assertThat(template.url())
+            .isEqualTo("/?key=");
+
+  }
+
+  @Test
+  public void resolveTemplateWithNullQueryParam() {
+    RequestTemplate template = new RequestTemplate().method(HttpMethod.GET)
+            .uri("/")
+            .query("key", "{key}");
+
+    final LinkedHashMap<String, String> variables = new LinkedHashMap<>();
+
+    variables.put("key", null);
+
+    template = template.resolve(variables);
+
+    assertThat(template.url())
+            .isEqualTo("/");
+
+  }
+
+  @Test
+  public void resolveTemplateWithOmittedQueryParam() {
+    RequestTemplate template = new RequestTemplate().method(HttpMethod.GET)
+            .uri("/")
+            .query("key", "{key}");
+
+
+    template = template.resolve(new LinkedHashMap<>());
+
+    assertThat(template.url())
+            .isEqualTo("/");
+
   }
 
   @Test
@@ -430,6 +481,13 @@ public class RequestTemplateTest {
     RequestTemplate template = new RequestTemplate().query("params[]", "foo%20bar");
     assertThat(template.queryLine()).isEqualTo("?params%5B%5D=foo%20bar");
     assertThat(template).hasQueries(entry("params[]", Collections.singletonList("foo%20bar")));
+  }
+
+  @Test
+  public void emptyStringQuery() {
+    RequestTemplate template = new RequestTemplate().query("param", "");
+    assertThat(template.queryLine()).isEqualTo("?param=");
+    assertThat(template).hasQueries(entry("param", Collections.singletonList("")));
   }
 
   @Test
